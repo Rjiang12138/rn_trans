@@ -1,5 +1,11 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, type StyleProp, type ViewStyle} from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 type Props = {
   title: string;

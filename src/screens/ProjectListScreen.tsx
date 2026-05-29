@@ -54,7 +54,7 @@ export function ProjectListScreen({onOpenProject}: Props) {
                     text: '删除',
                     style: 'destructive',
                     onPress: () => {
-                      void deleteProject(item.id);
+                      deleteProject(item.id).catch(() => undefined);
                     },
                   },
                 ])
@@ -64,18 +64,31 @@ export function ProjectListScreen({onOpenProject}: Props) {
         )}
       />
 
-      <Modal visible={openModal} transparent animationType="fade" onRequestClose={() => setOpenModal(false)}>
+      <Modal
+        visible={openModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpenModal(false)}>
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>新建项目</Text>
-            <TextInput value={name} onChangeText={setName} style={styles.input} placeholder="输入项目名" />
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
+              placeholder="输入项目名"
+            />
             <View style={styles.row}>
-              <PrimaryButton title="取消" onPress={() => setOpenModal(false)} style={styles.flex} />
+              <PrimaryButton
+                title="取消"
+                onPress={() => setOpenModal(false)}
+                style={styles.flex}
+              />
               <PrimaryButton
                 title="确定"
                 style={styles.flex}
                 onPress={() => {
-                  void (async () => {
+                  (async () => {
                     const projectId = await createProject(name);
                     if (!projectId) {
                       return;
@@ -83,7 +96,7 @@ export function ProjectListScreen({onOpenProject}: Props) {
                     setName('');
                     setOpenModal(false);
                     onOpenProject(projectId);
-                  })();
+                  })().catch(() => undefined);
                 }}
               />
             </View>

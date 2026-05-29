@@ -1,10 +1,17 @@
 import {create} from 'zustand';
 import RNFS from 'react-native-fs';
+import {Image} from 'react-native';
 import type {Project, PageData} from '../types';
-import {loadProjects, saveProjects, ensureProjectDir, getProjectDir} from '../storage/storage';
+import {
+  loadProjects,
+  saveProjects,
+  ensureProjectDir,
+  getProjectDir,
+} from '../storage/storage';
 import {makeId} from '../utils/id';
 
 const normalizeFilePath = (uri: string) => uri.replace('file://', '');
+const MAX_PAGES_PER_PROJECT = 50;
 
 type AppState = {
   projects: Project[];
@@ -12,7 +19,10 @@ type AppState = {
   hydrate: () => Promise<void>;
   createProject: (name: string) => Promise<string | null>;
   deleteProject: (id: string) => Promise<void>;
-  importPages: (projectId: string, sourceUris: string[]) => Promise<{added: number; blocked: boolean}>;
+  importPages: (
+    projectId: string,
+    sourceUris: string[],
+  ) => Promise<{added: number; blocked: boolean}>;
   updatePage: (projectId: string, page: PageData) => Promise<void>;
 };
 
@@ -58,7 +68,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {added: 0, blocked: false};
     }
 
-    const left = 50 - project.pages.length;
+    const left = MAX_PAGES_PER_PROJECT - project.pages.length;
     const limited = sourceUris.slice(0, Math.max(0, left));
     const blocked = sourceUris.length > limited.length;
 
@@ -74,15 +84,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       const target = `${pageDir}/${pageId}.${ext}`;
       await RNFS.copyFile(fromPath, target);
 
-      const size = await new Promise<{width: number; height: number}>((resolve, reject) => {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const {Image} = require('react-native');
-        Image.getSize(
-          `file://${target}`,
-          (width: number, height: number) => resolve({width, height}),
-          (error: unknown) => reject(error),
-        );
-      });
+      const size = await new Promise<{width: number; height: number}>(
+        (resolve, reject) => {
+          Image.getSize(
+            `file://${target}`,
+            (width: number, height: number) => resolve({width, height}),
+            (error: unknown) => reject(error),
+          );
+        },
+      );
 
       newPages.push({
         id: pageId,
@@ -117,7 +127,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {
         ...project,
         updatedAt: Date.now(),
-        pages: project.pages.map(item => (item.id === page.id ? {...page, updatedAt: Date.now()} : item)),
+        pages: project.pages.map(item =>
+          item.id === page.id ? {...page, updatedAt: Date.now()} : item,
+        ),
       };
     });
     set({projects});

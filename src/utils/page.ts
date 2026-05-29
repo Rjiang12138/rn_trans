@@ -12,9 +12,7 @@ export const toSvgPath = (points: PaintPoint[]) => {
     const p = points[0];
     return `M ${p.x} ${p.y} L ${p.x + 0.01} ${p.y + 0.01}`;
   }
-  return points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
-    .join(' ');
+  return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 };
 
 export const createParagraph = (textItem: TextItem, maxWidth = 300) => {

@@ -10,12 +10,24 @@ import {
   View,
   type GestureResponderEvent,
 } from 'react-native';
-import {Canvas, Group, Image as SkImageNode, Paragraph, Path, Skia, useImage} from '@shopify/react-native-skia';
+import {
+  Canvas,
+  Group,
+  Image as SkImageNode,
+  Paragraph,
+  Path,
+  useImage,
+} from '@shopify/react-native-skia';
 import Slider from '@react-native-community/slider';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {useAppStore} from '../store/useAppStore';
 import type {PageData, TextItem} from '../types';
-import {clonePage, createParagraph, estimateTextBounds, toSvgPath} from '../utils/page';
+import {
+  clonePage,
+  createParagraph,
+  estimateTextBounds,
+  toSvgPath,
+} from '../utils/page';
 import {makeId} from '../utils/id';
 
 type Props = {
@@ -29,16 +41,22 @@ type ToolMode = 'move' | 'draw' | 'text';
 type TouchPoint = {x: number; y: number};
 
 const COLORS = ['#ffffff', '#000000', '#ff4d4f', '#4f7bff'];
+const DEFAULT_TEXT = '译文';
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 export function EditorScreen({projectId, pageId, onBack}: Props) {
   const updatePage = useAppStore(state => state.updatePage);
-  const page = useAppStore(
-    state => state.projects.find(project => project.id === projectId)?.pages.find(item => item.id === pageId),
+  const page = useAppStore(state =>
+    state.projects
+      .find(project => project.id === projectId)
+      ?.pages.find(item => item.id === pageId),
   );
 
-  const [pageState, setPageState] = useState<PageData | null>(page ? clonePage(page) : null);
+  const [pageState, setPageState] = useState<PageData | null>(
+    page ? clonePage(page) : null,
+  );
   const [mode, setMode] = useState<ToolMode>('move');
   const [showOverlay, setShowOverlay] = useState(true);
   const [brushColor, setBrushColor] = useState('#ffffff');
@@ -84,33 +102,44 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
     }
   }, [page]);
 
-  const image = useImage(pageState ? `file://${pageState.imagePath}` : undefined);
+  const image = useImage(
+    pageState ? `file://${pageState.imagePath}` : undefined,
+  );
 
   const fitScale = useMemo(() => {
     if (!pageState) {
       return 1;
     }
-    return Math.min(canvasSize.width / pageState.width, canvasSize.height / pageState.height);
+    return Math.min(
+      canvasSize.width / pageState.width,
+      canvasSize.height / pageState.height,
+    );
   }, [canvasSize.height, canvasSize.width, pageState]);
+  const pageWidth = pageState?.width ?? 1;
+  const pageHeight = pageState?.height ?? 1;
 
   useEffect(() => {
-    if (!pageState) {
-      return;
-    }
     const s = fitScale;
     setZoom(1);
     setOffset({
-      x: (canvasSize.width - pageState.width * s) / 2,
-      y: (canvasSize.height - pageState.height * s) / 2,
+      x: (canvasSize.width - pageWidth * s) / 2,
+      y: (canvasSize.height - pageHeight * s) / 2,
     });
-  }, [fitScale, pageState?.id, canvasSize.height, canvasSize.width]);
+  }, [
+    canvasSize.height,
+    canvasSize.width,
+    fitScale,
+    pageHeight,
+    pageId,
+    pageWidth,
+  ]);
 
   useEffect(() => {
     if (!pageState) {
       return;
     }
     const timer = setTimeout(() => {
-      void updatePage(projectId, pageState);
+      updatePage(projectId, pageState).catch(() => undefined);
     }, 260);
     return () => clearTimeout(timer);
   }, [pageState, projectId, updatePage]);
@@ -186,7 +215,12 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
   const findTextHit = (point: TouchPoint) =>
     pageState.texts.find(item => {
       const box = estimateTextBounds(item);
-      return point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height;
+      return (
+        point.x >= box.x &&
+        point.x <= box.x + box.width &&
+        point.y >= box.y &&
+        point.y <= box.y + box.height
+      );
     });
 
   const onResponderGrant = (event: GestureResponderEvent) => {
@@ -247,14 +281,21 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
       const p2 = touches[1];
       const center = {x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2};
       const distance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-      const ratio = distance / Math.max(1, interactionRef.current.startDistance);
+      const ratio =
+        distance / Math.max(1, interactionRef.current.startDistance);
       const nextZoom = clamp(interactionRef.current.startZoom * ratio, 0.5, 8);
       const prevScale = fitScale * interactionRef.current.startZoom;
       const nextScale = fitScale * nextZoom;
 
       const imagePoint = {
-        x: (interactionRef.current.startCenter.x - interactionRef.current.startOffset.x) / prevScale,
-        y: (interactionRef.current.startCenter.y - interactionRef.current.startOffset.y) / prevScale,
+        x:
+          (interactionRef.current.startCenter.x -
+            interactionRef.current.startOffset.x) /
+          prevScale,
+        y:
+          (interactionRef.current.startCenter.y -
+            interactionRef.current.startOffset.y) /
+          prevScale,
       };
 
       setZoom(nextZoom);
@@ -272,8 +313,12 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
     if (interactionRef.current.type === 'pan') {
       const t = touches[0];
       setOffset({
-        x: interactionRef.current.startOffset.x + (t.x - interactionRef.current.startCenter.x),
-        y: interactionRef.current.startOffset.y + (t.y - interactionRef.current.startCenter.y),
+        x:
+          interactionRef.current.startOffset.x +
+          (t.x - interactionRef.current.startCenter.x),
+        y:
+          interactionRef.current.startOffset.y +
+          (t.y - interactionRef.current.startCenter.y),
       });
       return;
     }
@@ -284,7 +329,10 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
       return;
     }
 
-    if (interactionRef.current.type === 'textDrag' && interactionRef.current.selectedTextId) {
+    if (
+      interactionRef.current.type === 'textDrag' &&
+      interactionRef.current.selectedTextId
+    ) {
       const t = toImagePoint(touches[0].x, touches[0].y);
       updateLocalPage({
         ...pageState,
@@ -303,7 +351,10 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
 
   const onResponderRelease = (event: GestureResponderEvent) => {
     const touches = resolveTouch(event);
-    const point = toImagePoint(touches[0]?.x ?? event.nativeEvent.locationX, touches[0]?.y ?? event.nativeEvent.locationY);
+    const point = toImagePoint(
+      touches[0]?.x ?? event.nativeEvent.locationX,
+      touches[0]?.y ?? event.nativeEvent.locationY,
+    );
 
     if (interactionRef.current.type === 'draw' && activeStroke.length > 0) {
       addHistory(pageState);
@@ -322,22 +373,34 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
       setActiveStroke([]);
     }
 
-    if (interactionRef.current.type === 'textDrag' && interactionRef.current.beforeDrag) {
+    if (
+      interactionRef.current.type === 'textDrag' &&
+      interactionRef.current.beforeDrag
+    ) {
       addHistory(interactionRef.current.beforeDrag);
-      if (!interactionRef.current.moved && interactionRef.current.targetTextId) {
-        const target = pageState.texts.find(item => item.id === interactionRef.current.targetTextId);
+      if (
+        !interactionRef.current.moved &&
+        interactionRef.current.targetTextId
+      ) {
+        const target = pageState.texts.find(
+          item => item.id === interactionRef.current.targetTextId,
+        );
         if (target) {
           beginEditText(target);
         }
       }
     }
 
-    if (mode === 'text' && !interactionRef.current.moved && !interactionRef.current.targetTextId) {
+    if (
+      mode === 'text' &&
+      !interactionRef.current.moved &&
+      !interactionRef.current.targetTextId
+    ) {
       const newText: TextItem = {
         id: makeId(),
         x: point.x,
         y: point.y,
-        text: '译文',
+        text: DEFAULT_TEXT,
         style: {
           color: '#000000',
           fontSize: 24,
@@ -370,8 +433,16 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
         <PrimaryButton title="返回" onPress={onBack} />
         <Text style={styles.title}>编辑页</Text>
         <View style={styles.row}>
-          <PrimaryButton title="撤销" onPress={undo} disabled={past.length === 0} />
-          <PrimaryButton title="重做" onPress={redo} disabled={future.length === 0} />
+          <PrimaryButton
+            title="撤销"
+            onPress={undo}
+            disabled={past.length === 0}
+          />
+          <PrimaryButton
+            title="重做"
+            onPress={redo}
+            disabled={future.length === 0}
+          />
         </View>
       </View>
 
@@ -387,7 +458,12 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
         onResponderMove={onResponderMove}
         onResponderRelease={onResponderRelease}>
         <Canvas style={styles.canvas}>
-          <Group transform={[{translateX: offset.x}, {translateY: offset.y}, {scale: totalScale}]}>
+          <Group
+            transform={[
+              {translateX: offset.x},
+              {translateY: offset.y},
+              {scale: totalScale},
+            ]}>
             {image && (
               <SkImageNode
                 image={image}
@@ -423,7 +499,13 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
             )}
 
             {pageState.texts.map(item => (
-              <Paragraph key={item.id} paragraph={createParagraph(item)} x={item.x} y={item.y} width={360} />
+              <Paragraph
+                key={item.id}
+                paragraph={createParagraph(item)}
+                x={item.x}
+                y={item.y}
+                width={360}
+              />
             ))}
           </Group>
         </Canvas>
@@ -431,17 +513,36 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
 
       <View style={styles.toolbar}>
         <View style={styles.row}>
-          <PrimaryButton title="移动" onPress={() => setMode('move')} style={mode === 'move' && styles.activeBtn} />
-          <PrimaryButton title="涂抹" onPress={() => setMode('draw')} style={mode === 'draw' && styles.activeBtn} />
-          <PrimaryButton title="文本" onPress={() => setMode('text')} style={mode === 'text' && styles.activeBtn} />
-          <PrimaryButton title={showOverlay ? '隐层' : '显层'} onPress={() => setShowOverlay(v => !v)} />
+          <PrimaryButton
+            title="移动"
+            onPress={() => setMode('move')}
+            style={mode === 'move' && styles.activeBtn}
+          />
+          <PrimaryButton
+            title="涂抹"
+            onPress={() => setMode('draw')}
+            style={mode === 'draw' && styles.activeBtn}
+          />
+          <PrimaryButton
+            title="文本"
+            onPress={() => setMode('text')}
+            style={mode === 'text' && styles.activeBtn}
+          />
+          <PrimaryButton
+            title={showOverlay ? '隐层' : '显层'}
+            onPress={() => setShowOverlay(v => !v)}
+          />
         </View>
 
         <View style={styles.row}>
           {COLORS.map(color => (
             <Pressable
               key={color}
-              style={[styles.color, {backgroundColor: color}, brushColor === color && styles.colorActive]}
+              style={[
+                styles.color,
+                {backgroundColor: color},
+                brushColor === color && styles.colorActive,
+              ]}
               onPress={() => setBrushColor(color)}
             />
           ))}
@@ -462,7 +563,10 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
                 return;
               }
               addHistory(pageState);
-              updateLocalPage({...pageState, strokes: pageState.strokes.slice(0, -1)});
+              updateLocalPage({
+                ...pageState,
+                strokes: pageState.strokes.slice(0, -1),
+              });
             }}
             disabled={!pageState.strokes.length}
           />
@@ -479,7 +583,11 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
         />
       </View>
 
-      <Modal visible={Boolean(currentText)} transparent animationType="slide" onRequestClose={() => setEditingTextId(null)}>
+      <Modal
+        visible={Boolean(currentText)}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingTextId(null)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>编辑文本</Text>
@@ -492,7 +600,9 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
             />
             {currentText && (
               <>
-                <Text style={styles.meta}>字号 {Math.round(currentText.style.fontSize)}</Text>
+                <Text style={styles.meta}>
+                  字号 {Math.round(currentText.style.fontSize)}
+                </Text>
                 <Slider
                   minimumValue={12}
                   maximumValue={64}
@@ -512,7 +622,9 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
                     })
                   }
                 />
-                <Text style={styles.meta}>字间距 {currentText.style.letterSpacing.toFixed(1)}</Text>
+                <Text style={styles.meta}>
+                  字间距 {currentText.style.letterSpacing.toFixed(1)}
+                </Text>
                 <Slider
                   minimumValue={-1}
                   maximumValue={8}
@@ -532,7 +644,9 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
                     })
                   }
                 />
-                <Text style={styles.meta}>行间距 {Math.round(currentText.style.lineHeight)}</Text>
+                <Text style={styles.meta}>
+                  行间距 {Math.round(currentText.style.lineHeight)}
+                </Text>
                 <Slider
                   minimumValue={12}
                   maximumValue={90}
@@ -564,7 +678,10 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
                                 ...item,
                                 style: {
                                   ...item.style,
-                                  fontWeight: item.style.fontWeight === 'bold' ? 'normal' : 'bold',
+                                  fontWeight:
+                                    item.style.fontWeight === 'bold'
+                                      ? 'normal'
+                                      : 'bold',
                                 },
                               }
                             : item,
@@ -583,7 +700,10 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
                                 ...item,
                                 style: {
                                   ...item.style,
-                                  color: item.style.color === '#000000' ? '#ffffff' : '#000000',
+                                  color:
+                                    item.style.color === '#000000'
+                                      ? '#ffffff'
+                                      : '#000000',
                                 },
                               }
                             : item,
@@ -596,14 +716,22 @@ export function EditorScreen({projectId, pageId, onBack}: Props) {
             )}
 
             <View style={styles.row}>
-              <PrimaryButton title="删除" onPress={() => {
-                if (!editingTextId) {
-                  return;
-                }
-                addHistory(pageState);
-                updateLocalPage({...pageState, texts: pageState.texts.filter(item => item.id !== editingTextId)});
-                setEditingTextId(null);
-              }} />
+              <PrimaryButton
+                title="删除"
+                onPress={() => {
+                  if (!editingTextId) {
+                    return;
+                  }
+                  addHistory(pageState);
+                  updateLocalPage({
+                    ...pageState,
+                    texts: pageState.texts.filter(
+                      item => item.id !== editingTextId,
+                    ),
+                  });
+                  setEditingTextId(null);
+                }}
+              />
               <PrimaryButton title="保存" onPress={saveText} />
             </View>
           </View>
@@ -635,11 +763,21 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   row: {flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap'},
-  color: {width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#666'},
+  color: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#666',
+  },
   colorActive: {borderWidth: 3, borderColor: '#2f66ff'},
   activeBtn: {backgroundColor: '#444'},
   meta: {fontSize: 12, color: '#555'},
-  modalOverlay: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.22)'},
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.22)',
+  },
   modalCard: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 12,

@@ -13,7 +13,8 @@ const ensureRoot = async () => {
 
 export const getRootDir = () => ROOT_DIR;
 
-export const getProjectDir = (projectId: string) => `${ROOT_DIR}/projects/${projectId}`;
+export const getProjectDir = (projectId: string) =>
+  `${ROOT_DIR}/projects/${projectId}`;
 
 export const ensureProjectDir = async (projectId: string) => {
   await ensureRoot();

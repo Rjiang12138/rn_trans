@@ -1,4 +1,10 @@
-import {ImageFormat, Skia} from '@shopify/react-native-skia';
+import {
+  ImageFormat,
+  PaintStyle,
+  Skia,
+  StrokeCap,
+  StrokeJoin,
+} from '@shopify/react-native-skia';
 import RNFS from 'react-native-fs';
 import {getRootDir} from '../storage/storage';
 import {createParagraph, toSvgPath} from './page';
@@ -45,21 +51,27 @@ export const exportProjectPages = async (project: Project): Promise<string> => {
       const paint = Skia.Paint();
       paint.setAntiAlias(true);
       paint.setColor(Skia.Color(stroke.color));
-      paint.setStyle(1);
+      paint.setStyle(PaintStyle.Stroke);
       paint.setStrokeWidth(stroke.size);
-      paint.setStrokeCap(1);
-      paint.setStrokeJoin(1);
+      paint.setStrokeCap(StrokeCap.Round);
+      paint.setStrokeJoin(StrokeJoin.Round);
       canvas.drawPath(skPath, paint);
     });
 
     page.texts.forEach(textItem => {
-      const paragraph = createParagraph(textItem, Math.max(120, page.width - textItem.x));
+      const paragraph = createParagraph(
+        textItem,
+        Math.max(120, page.width - textItem.x),
+      );
       canvas.drawParagraph(paragraph, textItem.x, textItem.y);
     });
 
     const outputImage = surface.makeImageSnapshot();
     const base64 = outputImage.encodeToBase64(ImageFormat.PNG, 100);
-    const outputPath = `${exportDir}/page_${String(i + 1).padStart(3, '0')}.png`;
+    const outputPath = `${exportDir}/page_${String(i + 1).padStart(
+      3,
+      '0',
+    )}.png`;
     await RNFS.writeFile(outputPath, base64, 'base64');
   }
 

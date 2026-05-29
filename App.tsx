@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, StatusBar, View} from 'react-native';
+import {ActivityIndicator, StatusBar, StyleSheet, View} from 'react-native';
 import {ProjectListScreen} from './src/screens/ProjectListScreen';
 import {ProjectDetailScreen} from './src/screens/ProjectDetailScreen';
 import {EditorScreen} from './src/screens/EditorScreen';
@@ -16,19 +16,25 @@ function App(): React.JSX.Element {
   const [route, setRoute] = useState<Route>({name: 'projects'});
 
   useEffect(() => {
-    void hydrate();
+    hydrate().catch(() => undefined);
   }, [hydrate]);
 
   const content = useMemo(() => {
     if (route.name === 'projects') {
-      return <ProjectListScreen onOpenProject={projectId => setRoute({name: 'project', projectId})} />;
+      return (
+        <ProjectListScreen
+          onOpenProject={projectId => setRoute({name: 'project', projectId})}
+        />
+      );
     }
     if (route.name === 'project') {
       return (
         <ProjectDetailScreen
           projectId={route.projectId}
           onBack={() => setRoute({name: 'projects'})}
-          onOpenEditor={pageId => setRoute({name: 'editor', projectId: route.projectId, pageId})}
+          onOpenEditor={pageId =>
+            setRoute({name: 'editor', projectId: route.projectId, pageId})
+          }
         />
       );
     }
@@ -45,7 +51,7 @@ function App(): React.JSX.Element {
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#f4f4f4" />
       {!hydrated ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={styles.loading}>
           <ActivityIndicator />
         </View>
       ) : (
@@ -54,5 +60,9 @@ function App(): React.JSX.Element {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+});
 
 export default App;
